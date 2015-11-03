@@ -317,7 +317,6 @@ class Application(Frame):
     def control(self,event):
         if self.password.get() == lid.wachtwoord:
             self.trueww = 1
-            print('hoi')
         else: self.trueww = 0 
         
         if self.trueww == 1:
