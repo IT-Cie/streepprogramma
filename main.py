@@ -311,6 +311,7 @@ class Application(Frame):
     def check_password(self):
         self.top = Toplevel()
         self.password = Entry(self.top, text="Wachtwoord", show='*')
+        self.password.delete(0, 'end')
         self.password.bind('<Return>', self.control)
         self.password.pack()
         
