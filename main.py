@@ -309,7 +309,8 @@ class Application(Frame):
                         self.maak_keuze()
             
     def check_password(self):
-        self.password = Entry(Toplevel(), text="Wachtwoord")
+        self.top = Toplevel()
+        self.password = Entry(self.top, text="Wachtwoord")
         self.password.bind('<Return>', self.control)
         self.password.pack()
         
@@ -318,7 +319,7 @@ class Application(Frame):
         if self.password.get() == lid.wachtwoord:
             self.trueww = 1
         else: self.trueww = 0 
-        
+        self.top.destroy()
         if self.trueww == 1:
             message = "Geregistreerd als "+self.content+", kies uw consumptie. \n"
             self.tekst_naam.insert(0.0, message)
