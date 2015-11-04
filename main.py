@@ -86,7 +86,7 @@ class Application(Frame):
                         "Chips": [PRIJS_CHIPS, "Chips "+text1+"%.2f" %PRIJS_CHIPS, 'gray70', "gray60"]}
         
     def stop_programma(self):
-        self.ww = Entry(Toplevel(), text="Wachtwoord")
+        self.ww = Entry(Toplevel(), text="Wachtwoord", show='*')
         self.ww.pack()
         self.ww.bind('<Return>', self.controleer)
         
@@ -310,7 +310,7 @@ class Application(Frame):
             
     def check_password(self):
         self.top = Toplevel()
-        self.password = Entry(self.top, text="Wachtwoord")
+        self.password = Entry(self.top, text="Wachtwoord", show='*')
         self.password.bind('<Return>', self.control)
         self.password.pack()
         
