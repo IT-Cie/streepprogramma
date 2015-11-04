@@ -87,6 +87,7 @@ class Application(Frame):
         
     def stop_programma(self):
         self.ww = Entry(Toplevel(), text="Wachtwoord", show='*')
+        self.ww.delete(0, 'end')
         self.ww.pack()
         self.ww.bind('<Return>', self.controleer)
         
@@ -326,7 +327,9 @@ class Application(Frame):
             self.tekst_naam.insert(0.0, message)
             self.tekst_naam.configure(background = "green2", fg = "black")
             self.maak_keuze()
-        else: self.na_bestelling()
+        else: 
+            tkMessageBox.showwarning("Wrong password", "The entered password is incorrect!")
+            self.na_bestelling()
 
 def check_minderjarig(row):
     lid = row[11].split("-")
