@@ -2,6 +2,8 @@ from Tkinter import *
 import csv
 from PIL import Image, ImageTk
 import time
+import tkMessageBox
+import os
 
 BUTTON_HEIGHT = 1
 BUTTON_WIDTH = 15
@@ -19,7 +21,7 @@ ACHTERGRONDKLEUR = "white"
 WACHTWOORD = "Wachtwoord"
 
 class Lid():
-    def __init__(self, naam, fris, tosti, bier, sterke_drank, wijn, koekjes, snoep, soep, chips, geld, geboortedatum):
+    def __init__(self, naam, fris, tosti, bier, sterke_drank, wijn, koekjes, snoep, soep, chips, geld, geboortedatum, wachtwoord):
         name = naam.split()
         self.voornaam = name[0]
         self.achternaam = ' '.join(name[1:len(name)])
@@ -35,6 +37,7 @@ class Lid():
         self.aantal_chips = int(chips)
         self.hoeveelheid_geld = float(geld)
         self.geboortedatum = geboortedatum
+        self.wachtwoord = wachtwoord
         
 class LedenLijst():
     def __init__(self):
@@ -83,14 +86,16 @@ class Application(Frame):
                         "Chips": [PRIJS_CHIPS, "Chips "+text1+"%.2f" %PRIJS_CHIPS, 'gray70', "gray60"]}
         
     def stop_programma(self):
-        self.ww = Entry(Toplevel(), text="Wachtwoord")
-        self.knop = Button(Toplevel(), text = "Ok", height = BUTTON_HEIGHT, width = BUTTON_WIDTH, command = self.controleer)
-        self.knop.pack()
+        self.ww = Entry(Toplevel(), text="Wachtwoord", show='*')
+        self.ww.delete(0, 'end')
         self.ww.pack()
+        self.ww.bind('<Return>', self.controleer)
         
-    def controleer(self):
+    def controleer(self, event):
         if self.ww.get()==WACHTWOORD:
             Frame.quit(self)
+        else:
+            tkMessageBox.showwarning("Wrong password", "The entered password is incorrect!")
         
     def maak_keuze(self):
         if self.content in minderjarigen:
@@ -209,8 +214,8 @@ class Application(Frame):
                elif artikel == "Wijn":
                    lid.aantal_wijn += 1
                lid.hoeveelheid_geld += wat_prijs
-        self.registreer_aankoop()
         self.gestreepd_artikel = artikel
+        self.registreer_aankoop()
         
     def registreer_aankoop(self):
         self.bestelling = Text(self, width = 40, height = 1, wrap = WORD)
@@ -221,8 +226,8 @@ class Application(Frame):
         self.bestelling.configure(bg = "green2")
         Frame.after(self, WACHTTIJD, self.na_bestelling)
         self.opzien = Text(self, bg = ACHTERGRONDKLEUR, width = 100, height = 50)
-        self.tijd = string()
-        self.opzien.insert(0, self.tijd+":\t"+string(self.gestreepd_artikel)+"\n")
+        self.tijd = str()
+        self.opzien.insert(1.0, self.tijd+":\t"+str(self.gestreepd_artikel)+"\n")
         
     def na_bestelling(self):
         self.tekst_naam.delete(0.0, END)
@@ -235,7 +240,7 @@ class Application(Frame):
             self.lib_knop2[stuk].destroy()
         self.bestelling.destroy()
         self.tekst3.destroy()
-        ML2 = Image.open('C:\Users\Kiki\workspace\home\kts260\workspace\Introduction to Programming\Automatisch Streepsysteem AC\menslogo.JPG')
+        ML2 = Image.open('menslogo.JPG')
         achtergrond = ImageTk.PhotoImage(ML2)
         self.backlabel = Label(root, image= achtergrond)
         self.backlabel.image = achtergrond
@@ -294,10 +299,37 @@ class Application(Frame):
     def check_name(self):
         self.make_name()
         if self.content in namen:
+            for lid in leden.rij:
+                if lid.naam == self.content:
+                    if lid.wachtwoord!='0':
+                        self.check_password()
+                    else: 
+                        message = "Geregistreerd als "+self.content+", kies uw consumptie. \n"
+                        self.tekst_naam.insert(0.0, message)
+                        self.tekst_naam.configure(background = "green2", fg = "black")
+                        self.maak_keuze()
+            
+    def check_password(self):
+        self.top = Toplevel()
+        self.password = Entry(self.top, text="Wachtwoord", show='*')
+        self.password.delete(0, 'end')
+        self.password.bind('<Return>', self.control)
+        self.password.pack()
+        
+        
+    def control(self,event):
+        if self.password.get() == lid.wachtwoord:
+            self.trueww = 1
+        else: self.trueww = 0 
+        self.top.destroy()
+        if self.trueww == 1:
             message = "Geregistreerd als "+self.content+", kies uw consumptie. \n"
             self.tekst_naam.insert(0.0, message)
             self.tekst_naam.configure(background = "green2", fg = "black")
             self.maak_keuze()
+        else: 
+            tkMessageBox.showwarning("Wrong password", "The entered password is incorrect!")
+            self.na_bestelling()
 
 def check_minderjarig(row):
     lid = row[11].split("-")
@@ -318,7 +350,14 @@ def check_minderjarig(row):
                 wat = True
     return wat
                 
-with open('december 2014.csv', 'rb') as csvfile:
+nu_jaar = int(time.strftime("%Y"))
+nu_maand = int(time.strftime("%m"))
+filename = '%d-%d.csv' %(nu_jaar, nu_maand)
+if (os.path.isfile(filename)):
+    filename2 = filename
+else: filename2 = 'template.csv'
+      
+with open(filename2, 'rb') as csvfile:
     file_now = csv.reader(csvfile, delimiter = ';')
     leden = LedenLijst()
     namen = []
@@ -326,12 +365,22 @@ with open('december 2014.csv', 'rb') as csvfile:
     voornamen = []
     for row in file_now:
         if row[0] != 'Naam' and row[0] != 'Totaal' and row[0]!='Omzet' and row[0]!="Voorraad":
-            lid = Lid(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11])
+            lid = Lid(row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12])
             leden.add(lid)
             namen.append(row[0])
             voornamen.append(row[0].split()[0])
             if check_minderjarig(row):
                 minderjarigen.append(row[0])
+        elif row[0] == "Voorraad":
+            voor_fris = int(row[1])
+            voor_tosti = int(row[2])
+            voor_bier = int(row[3])
+            voor_sterk = int(row[4])
+            voor_wijn = int(row[5])
+            voor_koek = int(row[6])
+            voor_snoep = int(row[7])
+            voor_soep = int(row[8])
+            voor_chips = int(row[9])
         elif row[0] == 'Totaal':
             totaal_fris = int(row[1])
             totaal_tosti = int(row[2])
@@ -356,13 +405,11 @@ with open('december 2014.csv', 'rb') as csvfile:
             totaal_omzet = float(row[10])
     root = Tk()
     root.title("Streepsysteem Studievereniging Mens, versie januari 2015")
-    Xx = root.winfo_screenwidth()
-    Yy = root.winfo_screenheight()
-    root.geometry("%dx%d" %(Xx,Yy))
+    root.geometry("1000x600")
     root.configure(background = ACHTERGRONDKLEUR)
     app = Application(root)
     root.mainloop()
-    with open('januari 2015.csv', 'wb') as csvfile2:
+    with open(filename, 'wb') as csvfile2:
         file_now2 = csv.writer(csvfile2, delimiter = ';')
         file_now2.writerow(['Naam', 'Fris', 'Tosti', 'Bier', 'Sterke drank', 'Wijn', 'Koek', 'Snoep', 'Soep', 'Chips', 'Geld', 'Geboortedatum'])    
         for row in leden.rij:
@@ -381,15 +428,17 @@ with open('december 2014.csv', 'rb') as csvfile:
             totaal_soep += row.aantal_soep
         file_now2.writerow(['Totaal', totaal_fris, totaal_tosti, totaal_bier, totaal_sterk, totaal_wijn, totaal_koek, \
                             totaal_snoep, totaal_soep, totaal_chips, totaal_geld, " "])
-        omzet_fris = totaal_fris*PRIJS_FRIS
-        omzet_bier = totaal_bier*PRIJS_BIER
-        omzet_chips = totaal_chips*PRIJS_CHIPS
-        omzet_koek = totaal_koek*PRIJS_KOEK
-        omzet_snoep = totaal_snoep*PRIJS_SNOEP
-        omzet_soep = totaal_soep*PRIJS_SOEP
-        omzet_sterk = totaal_sterk*PRIJS_STERK
-        omzet_tosti = totaal_tosti*PRIJS_TOSTI
-        omzet_wijn = totaal_wijn*PRIJS_WIJN
+        omzet_fris += totaal_fris*PRIJS_FRIS
+        omzet_bier += totaal_bier*PRIJS_BIER
+        omzet_chips += totaal_chips*PRIJS_CHIPS
+        omzet_koek += totaal_koek*PRIJS_KOEK
+        omzet_snoep += totaal_snoep*PRIJS_SNOEP
+        omzet_soep += totaal_soep*PRIJS_SOEP
+        omzet_sterk += totaal_sterk*PRIJS_STERK
+        omzet_tosti += totaal_tosti*PRIJS_TOSTI
+        omzet_wijn += totaal_wijn*PRIJS_WIJN
         totaal_omzet = omzet_bier+omzet_chips+omzet_fris+omzet_koek+omzet_snoep+omzet_soep+omzet_sterk+omzet_tosti+omzet_wijn
         file_now2.writerow(['Omzet', omzet_fris, omzet_tosti, omzet_bier, omzet_sterk, omzet_wijn, omzet_koek, omzet_snoep, omzet_soep,\
                             omzet_chips, totaal_omzet, " "])
+        file_now2.writerow(["Voorraad", voor_fris, voor_tosti, voor_bier, voor_sterk, voor_wijn, voor_koek, voor_snoep, voor_soep,\
+                            voor_chips, " ", " "])
