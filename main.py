@@ -4,6 +4,7 @@ import Image, ImageTk
 import time
 import tkMessageBox
 import os, sys, shutil
+import hashlib as h
 
 #===============================================================================
 # Instellingen
@@ -11,7 +12,6 @@ import os, sys, shutil
 
 VERSIE = "November 2015"
 WACHTWOORD = "Wachtwoord"
-WACHTTIJD = 1000 #in miliseconden
 debuggen = False
 
 #===============================================================================
@@ -74,8 +74,11 @@ class MainApplication(tk.Tk):
         self.fullscreenstate = False
         self.attributes("-fullscreen", self.fullscreenstate)
         
-    def stop_programma(self):        
-        self.ww = tk.Entry(tk.Toplevel(), text="Wachtwoord")
+    def stop_programma(self):
+        stop = tk.Toplevel()        
+        self.label = tk.Label(stop,text='Wachtwoord?')
+        self.label.pack()
+        self.ww = tk.Entry(stop, text="Wachtwoord", show="*")
         self.ww.pack()
         self.ww.bind('<Return>', self.controleer_einde)
         
@@ -85,7 +88,7 @@ class MainApplication(tk.Tk):
             #self.destroy()
             tk.Tk.quit(self)
         else:
-            tkMessageBox.showwarning("Wrong password", "The entered password is incorrect!")
+            tkMessageBox.showwarning("Verkeerd paswoord", "Het ingevoerde paswoord is incorrect!")
         
 class LoginScherm(tk.Frame):
 
@@ -128,7 +131,15 @@ class LoginScherm(tk.Frame):
                 if first_name == lid.voornaam:
                     vol_naam = "%s %s" %(lid.voornaam, lid.achternaam)
                     root.gebruiker = vol_naam
-                    root.show_frame(StreepScherm)
+                    if lid.wachtwoord == '0':
+                        root.show_frame(StreepScherm)
+                    else:
+                        self.insertedww = tk.StringVar()
+                        self.wachtwoord = lid.wachtwoord
+                        insertww = tk.Toplevel()
+                        tk.Label(insertww, text = 'Wachtwoord?').grid(row=0)
+                        tk.Entry(insertww,text = "Put in Password", textvariable = self.insertedww, show = '*').grid(row=1)
+                        tk.Button(insertww, text = "Ok", command = self.check_password).grid(row=2)
         else:
             self.response.delete(1.0,tk.END)
             self.response.insert(1.0, "Kies uw naam")
@@ -145,6 +156,14 @@ class LoginScherm(tk.Frame):
                 self.btn_dict[person] = tk.Button(self, width = 40, text = person, font="Calibri, 16", \
                                             command = action, bg = self.Achtergrondkleur, activebackground="yellow2")
                 self.btn_dict[person].pack(pady=10)
+                
+    def check_password(self):
+        self.insertedww = h.sha224(self.insertedww.get())
+        self.insertedww = self.insertedww.digest()
+        if self.insertedww == self.wachtwoord:
+            root.show_frame(StreepScherm)
+        else:
+            tkMessageBox.showwarning("Verkeerd wachtwoord", "Het ingevoerde wachtwoord is incorrect!")
     
     def reg_naam(self,vol_naam):
         root.gebruiker = vol_naam
@@ -186,6 +205,8 @@ class StreepScherm(tk.Frame):
         tk.Button(self.left_frame, text = "Doe aankoop", command = action, font=self.lettertype).grid(row = 1, column = 2, sticky="nsew")
         action = lambda: root.show_frame(LoginScherm)
         tk.Button(self.left_frame, text = "Terug", command = action, font=self.lettertype).grid(row = 1, column = 1, sticky="nsew")
+        action = lambda: self.maak_wachtwoord()
+        tk.Button(self.left_frame, text = "Maak nieuw wachtwoord", command = action, font=self.lettertype).grid(row = 1, column = 3, sticky="nsew")
         self.tekst_naam = tk.Text(self.right_frame, width=23, height = 2, bg=self.Achtergrondkleur, bd=0, font=self.lettertype)
         self.tekst_naam.tag_configure("center", justify='center')
         self.tekst_naam.pack(side="top", pady=20)
@@ -262,9 +283,66 @@ class StreepScherm(tk.Frame):
                 nu_gestreept += "_______________________\nAdditief saldo \t\t%s %.2f\n\n_______________________\nNieuw saldo \t\t%s %.2f" %(self.euro, self.additief_saldo, self.euro, lid.geld+self.additief_saldo)
         self.tekst_nu_gestreept.insert(0.0, nu_gestreept)
         
-    
-
-
+    def maak_wachtwoord(self):
+        self.nieuwwachtwoord1 = tk.StringVar()
+        self.nieuwwachtwoord2 = tk.StringVar()
+        self.oudwachtwoord2 = tk.StringVar()
+        self.oudwachtwoord = '0'
+        for lid in leden:
+            if lid.naam == root.gebruiker:
+                self.oudwachtwoord = lid.wachtwoord
+                
+        if  not self.oudwachtwoord== '0':
+            self.makewachtwoord = tk.Toplevel()
+            #Kijken of de gebruiker het huidige wachtwoord weet
+            tk.Label(self.makewachtwoord,text="Huidig wachtwoord").grid(row=0,column=0)
+            tk.Label(self.makewachtwoord,text="Nieuw wachtwoord").grid(row=1,column=0)
+            tk.Label(self.makewachtwoord,text="Herhaal nieuw wachtwoord").grid(row=2,column=0)
+            tk.Entry(self.makewachtwoord, text="Huidig wachtwoord", show="*", textvariable = self.oudwachtwoord2).grid(row=0,column=1)
+            tk.Entry(self.makewachtwoord, text="Nieuw wachtwoord", show="*", textvariable = self.nieuwwachtwoord1).grid(row=1,column=1)
+            tk.Entry(self.makewachtwoord, text="Herhaal nieuw wachtwoord", show="*", textvariable = self.nieuwwachtwoord2).grid(row=2,column=1)
+            tk.Button(self.makewachtwoord,text = "Annuleren", command = self.makewachtwoord.destroy).grid(row=3,column=0)
+            tk.Button(self.makewachtwoord,text = "Ok", command = self.maak_wachtwoord1).grid(row=3,column=1)
+        else:
+            self.makewachtwoord = tk.Toplevel()
+            #Kijken of de gebruiker het huidige wachtwoord weet
+            tk.Label(self.makewachtwoord,text="Nieuw wachtwoord").grid(row=0,column=0)
+            tk.Label(self.makewachtwoord,text="Herhaal nieuw wachtwoord").grid(row=1,column=0)
+            tk.Entry(self.makewachtwoord, text="Nieuw wachtwoord", show="*", textvariable = self.nieuwwachtwoord1).grid(row=0,column=1)
+            tk.Entry(self.makewachtwoord, text="Herhaal nieuw wachtwoord", show="*", textvariable = self.nieuwwachtwoord2).grid(row=1,column=1)
+            tk.Button(self.makewachtwoord,text = "Annuleren", command = self.makewachtwoord.destroy).grid(row=2,column=0)
+            tk.Button(self.makewachtwoord,text = "Ok", command = self.maak_wachtwoord1).grid(row=2,column=1) 
+            
+    def maak_wachtwoord1(self):
+        self.nieuwwachtwoord1 = h.sha224(self.nieuwwachtwoord1.get())
+        self.nieuwwachtwoord1 = self.nieuwwachtwoord1.digest()
+        self.nieuwwachtwoord2 = h.sha224(self.nieuwwachtwoord2.get())
+        self.nieuwwachtwoord2 = self.nieuwwachtwoord2.digest()
+        if not self.oudwachtwoord == '0':
+            self.oudwachtwoord2 = h.sha224(self.oudwachtwoord2.get())
+            self.oudwachtwoord2 = self.oudwachtwoord2.digest()
+            if not self.oudwachtwoord == self.oudwachtwoord2:
+                tkMessageBox.showwarning("Verkeerd wachtwoord", "Het ingevoerde wachtwoord is incorrect!")
+            elif self.nieuwwachtwoord1 == self.nieuwwachtwoord2:
+                for lid in leden:
+                    if lid.naam == root.gebruiker:
+                        lid.wachtwoord = self.nieuwwachtwoord1
+                tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is veranderd!")
+            else:
+                tkMessageBox.showwarning("Verkeerd wachtwoord", "Het ingevoerde wachtwoord is incorrect!")
+        else: 
+            if self.nieuwwachtwoord1 == self.nieuwwachtwoord2:
+                for lid in leden:
+                    if lid.naam == root.gebruiker:
+                        lid.wachtwoord = self.nieuwwachtwoord1
+                        
+                tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is veranderd!")
+            else:
+                tkMessageBox.showwarning("Verkeerd wachtwoord", "Het ingevoerde wachtwoord is incorrect!")
+                
+        self.makewachtwoord.destroy()                          
+                
+                
 class AdminScherm(tk.Frame):
 
     def __init__(self, parent):
@@ -276,18 +354,19 @@ class AdminScherm(tk.Frame):
         pass
         
 class Lid():
-    def __init__(self, naam, aantallen, geld, geboortedatum):
+    def __init__(self, naam, aantallen, geld, geboortedatum, wachtwoord):
         self.voornaam = naam.split()[0]
         self.achternaam = ' '.join(naam.split()[1:])
         self.naam = str(naam)
         self.aantal=map(int,aantallen)
         self.geld = float(geld)
         self.geboortedatum = geboortedatum
+        self.wachtwoord = str(wachtwoord)
 
 
-
+    
 def check_minderjarig(row):
-    lid = row[-1].split("-")
+    lid = row[-2].split("-")
     dag = int(lid[0])
     maand = int(lid[1])
     jaar = int(lid[2])
@@ -318,15 +397,15 @@ with open(maandlijstbestand, 'rb') as csvfile:
     voornamen = []
     for row in file_now:
         if row[0] != 'Prijs' and row[0] != 'Naam' and row[0] != 'Totaal' and row[0]!='Omzet' and row[0]!="Voorraad":
-            lid = Lid(row[0], row[1:-2], row[-2], row[-1])
+            lid = Lid(row[0], row[1:-3], row[-3], row[-2], row[-1])
             leden.append(lid)
             voornamen.append(lid.voornaam)
             if check_minderjarig(row):
                 minderjarigen.append(row[0])
         elif row[0] == 'Naam':
-            producten=row[1:-2]
+            producten=row[1:-3]
         elif row[0] == 'Prijs':
-            prijzen=map(float,row[1:-2])
+            prijzen=map(float,row[1:-3])
     
     root = MainApplication()
     root.mainloop()
@@ -336,19 +415,19 @@ with open(maandlijstbestand, 'rb') as csvfile:
         totaal = [0] * (len(producten)+1)
         omzet = [0] * (len(producten)+1)
         file_now2 = csv.writer(csvfile2, delimiter = ';')
-        file_now2.writerow(['Prijs'] + prijzen + ['',''])
-        file_now2.writerow(['Naam'] + producten + ['Geld', 'Geboortedatum'])    
+        file_now2.writerow(['Prijs'] + prijzen + ['','',''])
+        file_now2.writerow(['Naam'] + producten + ['Geld', 'Geboortedatum','Wachtwoord'])    
         for lid in leden:
             volled_naam = "%s %s" %(lid.voornaam, lid.achternaam)
-            file_now2.writerow([volled_naam] + lid.aantal + [lid.geld, lid.geboortedatum])
+            file_now2.writerow([volled_naam] + lid.aantal + [lid.geld, lid.geboortedatum,lid.wachtwoord])
             for i in range(len(producten)):
                 totaal[i] += lid.aantal[i]
             totaal[-1] += round(lid.geld,2)
-        file_now2.writerow(['Totaal'] + totaal + [''])
+        file_now2.writerow(['Totaal'] + totaal + ['',''])
         for i in range(len(producten)):
             omzet[i] = round(totaal[i]*prijzen[i],2)
         omzet[-1] = round(sum(omzet[:-1]),2)
-        file_now2.writerow(['Omzet'] + omzet + [''])
+        file_now2.writerow(['Omzet'] + omzet + ['',''])
     
 shutil.copyfile(maandlijstbestand+'temp', maandlijstbestand)
 os.remove(maandlijstbestand+'temp')
