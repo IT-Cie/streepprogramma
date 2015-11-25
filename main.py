@@ -167,7 +167,17 @@ class LoginScherm(tk.Frame):
     
     def reg_naam(self,vol_naam):
         root.gebruiker = vol_naam
-        root.show_frame(StreepScherm)
+        for lid in leden:
+            if lid.naam == vol_naam:
+                if lid.wachtwoord == '0':
+                    root.show_frame(StreepScherm)
+                else:
+                    self.insertedww = tk.StringVar()
+                    self.wachtwoord = lid.wachtwoord
+                    insertww = tk.Toplevel()
+                    tk.Label(insertww, text = 'Wachtwoord?').grid(row=0)
+                    tk.Entry(insertww,text = "Put in Password", textvariable = self.insertedww, show = '*').grid(row=1)
+                    tk.Button(insertww, text = "Ok", command = self.check_password).grid(row=2)
         for person in self.nu_rij:
             self.btn_dict[person].destroy()
         # Mens-logo
@@ -428,7 +438,20 @@ with open(maandlijstbestand, 'rb') as csvfile:
             omzet[i] = round(totaal[i]*prijzen[i],2)
         omzet[-1] = round(sum(omzet[:-1]),2)
         file_now2.writerow(['Omzet'] + omzet + ['',''])
+        
+    with open('Streeplijst_0000-00temp.csv', 'wb') as csvfile3:
+        totaal2 = [0] * (len(producten)+1)
+        file_now3 = csv.writer(csvfile3, delimiter = ';')
+        file_now3.writerow(['Prijs'] + prijzen + ['','',''])
+        file_now3.writerow(['Naam'] + producten + ['Geld', 'Geboortedatum','Wachtwoord'])    
+        for lid in leden:
+            volled_naam = "%s %s" %(lid.voornaam, lid.achternaam)
+            file_now3.writerow([volled_naam]+totaal2+ [lid.geboortedatum,lid.wachtwoord])
+        file_now3.writerow(['Totaal'] + totaal2 + ['',''])
+        file_now3.writerow(['Omzet'] + totaal2 + ['',''])
     
 shutil.copyfile(maandlijstbestand+'temp', maandlijstbestand)
 os.remove(maandlijstbestand+'temp')
+shutil.copyfile('Streeplijst_0000-00temp.csv','Streeplijst_0000-00.csv')
+os.remove('Streeplijst_0000-00temp.csv')
                 
