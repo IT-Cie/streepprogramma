@@ -318,31 +318,62 @@ class StreepScherm(tk.Frame):
             tk.Button(self.makewachtwoord,text = "Ok", command = self.maak_wachtwoord1).grid(row=2,column=1) 
             
     def maak_wachtwoord1(self):
-        self.nieuwwachtwoord1 = h.sha224(self.nieuwwachtwoord1.get())
-        self.nieuwwachtwoord1 = self.nieuwwachtwoord1.digest()
-        self.nieuwwachtwoord2 = h.sha224(self.nieuwwachtwoord2.get())
-        self.nieuwwachtwoord2 = self.nieuwwachtwoord2.digest()
-        if not self.oudwachtwoord == '0':
+        if self.oudwachtwoord:
             self.oudwachtwoord2 = h.sha224(self.oudwachtwoord2.get())
             self.oudwachtwoord2 = self.oudwachtwoord2.digest()
-            if not self.oudwachtwoord == self.oudwachtwoord2:
-                tkMessageBox.showwarning("Verkeerd wachtwoord", "Het ingevoerde wachtwoord is incorrect!")
-            elif self.nieuwwachtwoord1 == self.nieuwwachtwoord2:
-                for lid in leden:
-                    if lid.naam == root.gebruiker:
-                        lid.wachtwoord = self.nieuwwachtwoord1
-                tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is veranderd!")
+            if self.oudwachtwoord == self.oudwachtwoord2:
+                if self.nieuwwachtwoord1.get() and self.nieuwwachtwoord2.get():
+                    if self.nieuwwachtwoord1.get() == self.nieuwwachtwoord2.get():
+                        self.nieuwwachtwoord1 = h.sha224(self.nieuwwachtwoord1.get())
+                        self.nieuwwachtwoord1 = self.nieuwwachtwoord1.digest()
+                        self.nieuwwachtwoord2 = h.sha224(self.nieuwwachtwoord2.get())
+                        self.nieuwwachtwoord2 = self.nieuwwachtwoord2.digest()
+                        for lid in leden:
+                            if lid.naam == root.gebruiker:
+                                lid.wachtwoord = self.nieuwwachtwoord1
+                        tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is veranderd!")
+                    else:
+                        tkMessageBox.showwarning("Verkeerd wachtwoord", "De ingevoerde wachtwoorden komen niet overeen!")
+                else: 
+                    for lid in leden:
+                        if lid.naam == root.gebruiker:
+                            lid.wachtwoord = ""
+                    tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is verwijderd!")
             else:
                 tkMessageBox.showwarning("Verkeerd wachtwoord", "Het ingevoerde wachtwoord is incorrect!")
+            
+            
+#             if not self.oudwachtwoord == self.oudwachtwoord2:
+#                 tkMessageBox.showwarning("Verkeerd wachtwoord", "Het ingevoerde wachtwoord is incorrect!")
+#             elif not self.nieuwwachtwoord1.get() and not self.nieuwwachtwoord2.get():
+#                 for lid in leden:
+#                     if lid.naam == root.gebruiker:
+#                         lid.wachtwoord = ""
+#                 tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is verwijderd!")
+#             elif self.nieuwwachtwoord1.get() == self.nieuwwachtwoord2.get():
+#                 self.nieuwwachtwoord1 = h.sha224(self.nieuwwachtwoord1.get())
+#                 self.nieuwwachtwoord1 = self.nieuwwachtwoord1.digest()
+#                 self.nieuwwachtwoord2 = h.sha224(self.nieuwwachtwoord2.get())
+#                 self.nieuwwachtwoord2 = self.nieuwwachtwoord2.digest()
+#                 for lid in leden:
+#                     if lid.naam == root.gebruiker:
+#                         lid.wachtwoord = self.nieuwwachtwoord1
+#                 tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is veranderd!")
+#             else:
+#                 tkMessageBox.showwarning("Verkeerd wachtwoord", "De ingevoerde wachtwoorden komen niet overeen!")
         else: 
-            if self.nieuwwachtwoord1 == self.nieuwwachtwoord2:
+            if self.nieuwwachtwoord1.get() == self.nieuwwachtwoord2.get():
+                self.nieuwwachtwoord1 = h.sha224(self.nieuwwachtwoord1.get())
+                self.nieuwwachtwoord1 = self.nieuwwachtwoord1.digest()
+                self.nieuwwachtwoord2 = h.sha224(self.nieuwwachtwoord2.get())
+                self.nieuwwachtwoord2 = self.nieuwwachtwoord2.digest()
                 for lid in leden:
                     if lid.naam == root.gebruiker:
                         lid.wachtwoord = self.nieuwwachtwoord1
                         
                 tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is veranderd!")
             else:
-                tkMessageBox.showwarning("Verkeerd wachtwoord", "Het ingevoerde wachtwoord is incorrect!")
+                tkMessageBox.showwarning("Verkeerd wachtwoord", "De ingevoerde wachtwoorden komen niet overeen!")
                 
         self.makewachtwoord.destroy()                          
                 
