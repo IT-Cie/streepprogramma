@@ -157,10 +157,11 @@ class LoginScherm(tk.Frame):
                 else:
                     self.insertedww = tk.StringVar()
                     self.wachtwoord = lid.wachtwoord
-                    insertww = tk.Toplevel()
-                    tk.Label(insertww, text = 'Wachtwoord?').grid(row=0)
-                    tk.Entry(insertww,text = "Put in Password", textvariable = self.insertedww, show = '*').grid(row=1)
-                    tk.Button(insertww, text = "Ok", command = self.check_password).grid(row=2)
+                    self.insertww = tk.Toplevel()
+                    tk.Label(self.insertww, text = 'Wachtwoord?').grid(row=0)
+                    tk.Entry(self.insertww,text = "Put in Password", textvariable = self.insertedww, show = '*').grid(row=1)
+                    tk.Button(self.insertww, text = "Ok", command = self.check_password).grid(row=2)
+                    self.insertww.focus()
                 
     def check_password(self):
         self.insertedww = h.sha224(self.insertedww.get())
@@ -169,6 +170,7 @@ class LoginScherm(tk.Frame):
             root.show_frame(StreepScherm)
         else:
             tkMessageBox.showwarning("Verkeerd wachtwoord", "Het ingevoerde wachtwoord is incorrect!")
+        self.insertww.destroy()
     
     def reg_naam(self,vol_naam):
         root.gebruiker = vol_naam
@@ -451,16 +453,20 @@ def check_minderjarig(row):
 maandlijstbestand = 'Streeplijst_'+time.strftime("%Y-%m")+'.csv'
 
 #Geeft foutmelding als er al programma is geopend, waarmee gestreepd is.
-if os.path.isfile('Streeplijst_0000-00temp.csv'):
-    tkMessageBox.showwarning("Foutmelding","Programma is al geopend!")
+#if os.path.isfile('Streeplijst_0000-00temp.csv'):
+ #   tkMessageBox.showwarning("Foutmelding","Programma is al geopend!")
     
 # Als de lijst van deze maand nog niet bestaat, maak deze dan aan; en check of er een temp-bestand is en gebruikt deze in dat geval voor het inlezen. 
 if os.path.isfile(maandlijstbestand+'temp'):
     maandlijstbestand=maandlijstbestand+'temp'
 if not os.path.isfile(maandlijstbestand):
-    shutil.copyfile('Streeplijst_0000-00.csv', maandlijstbestand)
+    if os.path.isfile('Streeplijst_0000-00temp.csv'):
+        shutil.copyfile('Streeplijst_0000-00temp.csv', maandlijstbestand)
+    else:
+        shutil.copyfile('Streeplijst_0000-00.csv', maandlijstbestand)
     
 with open(maandlijstbestand, 'rb') as csvfile:
+    if maandlijstbestand[-4:]=='temp': maandlijstbestand=maandlijstbestand[:-4]
     file_now = csv.reader(csvfile, delimiter = ';')
     leden = []
     minderjarigen = []
