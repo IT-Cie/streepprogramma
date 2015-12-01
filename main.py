@@ -10,6 +10,7 @@ import hashlib as h
 # Instellingen
 #===============================================================================
 
+AG2 = "green2"
 VERSIE = "November 2015"
 WACHTWOORD = "Wachtwoord"
 debuggen = True
@@ -183,7 +184,7 @@ class LoginScherm(tk.Frame):
 class StreepScherm(tk.Frame):
 
     def __init__(self, parent):
-        self.Achtergrondkleur = "medium spring green"
+        self.Achtergrondkleur = AG2
         self.lettertype = ("Calibri, 15")
         tk.Frame.__init__(self,parent,bg=self.Achtergrondkleur)
         self.images = {}
@@ -271,6 +272,7 @@ class StreepScherm(tk.Frame):
                 for i in range(len(producten)):
                     lid.aantal[i] += self.gestreept[producten[i]]
                     self.gestreept[producten[i]]=0
+        write_file()
         root.show_frame(LoginScherm)
         
     def nu_gestreept(self, artikel, quantity=1):
@@ -318,62 +320,31 @@ class StreepScherm(tk.Frame):
             tk.Button(self.makewachtwoord,text = "Ok", command = self.maak_wachtwoord1).grid(row=2,column=1) 
             
     def maak_wachtwoord1(self):
+        self.nieuwwachtwoord1 = h.sha224(self.nieuwwachtwoord1.get())
+        self.nieuwwachtwoord1 = self.nieuwwachtwoord1.digest()
+        self.nieuwwachtwoord2 = h.sha224(self.nieuwwachtwoord2.get())
+        self.nieuwwachtwoord2 = self.nieuwwachtwoord2.digest()
         if self.oudwachtwoord:
             self.oudwachtwoord2 = h.sha224(self.oudwachtwoord2.get())
             self.oudwachtwoord2 = self.oudwachtwoord2.digest()
-            if self.oudwachtwoord == self.oudwachtwoord2:
-                if self.nieuwwachtwoord1.get() and self.nieuwwachtwoord2.get():
-                    if self.nieuwwachtwoord1.get() == self.nieuwwachtwoord2.get():
-                        self.nieuwwachtwoord1 = h.sha224(self.nieuwwachtwoord1.get())
-                        self.nieuwwachtwoord1 = self.nieuwwachtwoord1.digest()
-                        self.nieuwwachtwoord2 = h.sha224(self.nieuwwachtwoord2.get())
-                        self.nieuwwachtwoord2 = self.nieuwwachtwoord2.digest()
-                        for lid in leden:
-                            if lid.naam == root.gebruiker:
-                                lid.wachtwoord = self.nieuwwachtwoord1
-                        tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is veranderd!")
-                    else:
-                        tkMessageBox.showwarning("Verkeerd wachtwoord", "De ingevoerde wachtwoorden komen niet overeen!")
-                else: 
-                    for lid in leden:
-                        if lid.naam == root.gebruiker:
-                            lid.wachtwoord = ""
-                    tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is verwijderd!")
+            if not self.oudwachtwoord == self.oudwachtwoord2:
+                tkMessageBox.showwarning("Verkeerd wachtwoord", "Het ingevoerde wachtwoord is incorrect!")
+            elif self.nieuwwachtwoord1 == self.nieuwwachtwoord2:
+                for lid in leden:
+                    if lid.naam == root.gebruiker:
+                        lid.wachtwoord = self.nieuwwachtwoord1
+                tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is veranderd!")
             else:
                 tkMessageBox.showwarning("Verkeerd wachtwoord", "Het ingevoerde wachtwoord is incorrect!")
-            
-            
-#             if not self.oudwachtwoord == self.oudwachtwoord2:
-#                 tkMessageBox.showwarning("Verkeerd wachtwoord", "Het ingevoerde wachtwoord is incorrect!")
-#             elif not self.nieuwwachtwoord1.get() and not self.nieuwwachtwoord2.get():
-#                 for lid in leden:
-#                     if lid.naam == root.gebruiker:
-#                         lid.wachtwoord = ""
-#                 tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is verwijderd!")
-#             elif self.nieuwwachtwoord1.get() == self.nieuwwachtwoord2.get():
-#                 self.nieuwwachtwoord1 = h.sha224(self.nieuwwachtwoord1.get())
-#                 self.nieuwwachtwoord1 = self.nieuwwachtwoord1.digest()
-#                 self.nieuwwachtwoord2 = h.sha224(self.nieuwwachtwoord2.get())
-#                 self.nieuwwachtwoord2 = self.nieuwwachtwoord2.digest()
-#                 for lid in leden:
-#                     if lid.naam == root.gebruiker:
-#                         lid.wachtwoord = self.nieuwwachtwoord1
-#                 tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is veranderd!")
-#             else:
-#                 tkMessageBox.showwarning("Verkeerd wachtwoord", "De ingevoerde wachtwoorden komen niet overeen!")
         else: 
-            if self.nieuwwachtwoord1.get() == self.nieuwwachtwoord2.get():
-                self.nieuwwachtwoord1 = h.sha224(self.nieuwwachtwoord1.get())
-                self.nieuwwachtwoord1 = self.nieuwwachtwoord1.digest()
-                self.nieuwwachtwoord2 = h.sha224(self.nieuwwachtwoord2.get())
-                self.nieuwwachtwoord2 = self.nieuwwachtwoord2.digest()
+            if self.nieuwwachtwoord1 == self.nieuwwachtwoord2:
                 for lid in leden:
                     if lid.naam == root.gebruiker:
                         lid.wachtwoord = self.nieuwwachtwoord1
                         
                 tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is veranderd!")
             else:
-                tkMessageBox.showwarning("Verkeerd wachtwoord", "De ingevoerde wachtwoorden komen niet overeen!")
+                tkMessageBox.showwarning("Verkeerd wachtwoord", "Het ingevoerde wachtwoord is incorrect!")
                 
         self.makewachtwoord.destroy()                          
                 
@@ -398,7 +369,35 @@ class Lid():
         self.geboortedatum = geboortedatum
         self.wachtwoord = str(wachtwoord)
 
-
+def write_file():    
+    with open(maandlijstbestand+'temp', 'wb') as csvfile2:
+        totaal = [0] * (len(producten)+1)
+        omzet = [0] * (len(producten)+1)
+        file_now2 = csv.writer(csvfile2, delimiter = ';')
+        file_now2.writerow(['Prijs'] + prijzen + ['','',''])
+        file_now2.writerow(['Naam'] + producten + ['Geld', 'Geboortedatum','Wachtwoord'])    
+        for lid in leden:
+            volled_naam = "%s %s" %(lid.voornaam, lid.achternaam)
+            file_now2.writerow([volled_naam] + lid.aantal + [lid.geld, lid.geboortedatum,lid.wachtwoord])
+            for i in range(len(producten)):
+                totaal[i] += lid.aantal[i]
+            totaal[-1] += round(lid.geld,2)
+        file_now2.writerow(['Totaal'] + totaal + ['',''])
+        for i in range(len(producten)):
+            omzet[i] = round(totaal[i]*prijzen[i],2)
+        omzet[-1] = round(sum(omzet[:-1]),2)
+        file_now2.writerow(['Omzet'] + omzet + ['',''])
+    
+    with open('Streeplijst_0000-00temp.csv', 'wb') as csvfile3:
+        totaal2 = [0] * (len(producten)+1)
+        file_now3 = csv.writer(csvfile3, delimiter = ';')
+        file_now3.writerow(['Prijs'] + prijzen + ['','',''])
+        file_now3.writerow(['Naam'] + producten + ['Geld', 'Geboortedatum','Wachtwoord'])    
+        for lid in leden:
+            volled_naam = "%s %s" %(lid.voornaam, lid.achternaam)
+            file_now3.writerow([volled_naam]+totaal2+ [lid.geboortedatum,lid.wachtwoord])
+        file_now3.writerow(['Totaal'] + totaal2 + ['',''])
+        file_now3.writerow(['Omzet'] + totaal2 + ['',''])
     
 def check_minderjarig(row):
     lid = row[-2].split("-")
@@ -421,7 +420,13 @@ def check_minderjarig(row):
 
 maandlijstbestand = 'Streeplijst_'+time.strftime("%Y-%m")+'.csv'
 
-# Als de lijst van deze maand nog niet bestaat, maak deze dan aan
+#Geeft foutmelding als er al programma is geopend, waarmee gestreepd is.
+if os.path.isfile('Streeplijst_0000-00temp.csv'):
+    tkMessageBox.showwarning("Foutmelding","Programma is al geopend!")
+    
+# Als de lijst van deze maand nog niet bestaat, maak deze dan aan; en check of er een temp-bestand is en gebruikt deze in dat geval voor het inlezen. 
+if os.path.isfile(maandlijstbestand+'temp'):
+    maandlijstbestand=maandlijstbestand+'temp'
 if not os.path.isfile(maandlijstbestand):
     shutil.copyfile('Streeplijst_0000-00.csv', maandlijstbestand)
 
@@ -444,39 +449,10 @@ with open(maandlijstbestand, 'rb') as csvfile:
     
     root = MainApplication()
     root.mainloop()
-    
-    
-    with open(maandlijstbestand+'temp', 'wb') as csvfile2:
-        totaal = [0] * (len(producten)+1)
-        omzet = [0] * (len(producten)+1)
-        file_now2 = csv.writer(csvfile2, delimiter = ';')
-        file_now2.writerow(['Prijs'] + prijzen + ['','',''])
-        file_now2.writerow(['Naam'] + producten + ['Geld', 'Geboortedatum','Wachtwoord'])    
-        for lid in leden:
-            volled_naam = "%s %s" %(lid.voornaam, lid.achternaam)
-            file_now2.writerow([volled_naam] + lid.aantal + [lid.geld, lid.geboortedatum,lid.wachtwoord])
-            for i in range(len(producten)):
-                totaal[i] += lid.aantal[i]
-            totaal[-1] += round(lid.geld,2)
-        file_now2.writerow(['Totaal'] + totaal + ['',''])
-        for i in range(len(producten)):
-            omzet[i] = round(totaal[i]*prijzen[i],2)
-        omzet[-1] = round(sum(omzet[:-1]),2)
-        file_now2.writerow(['Omzet'] + omzet + ['',''])
-        
-    with open('Streeplijst_0000-00temp.csv', 'wb') as csvfile3:
-        totaal2 = [0] * (len(producten)+1)
-        file_now3 = csv.writer(csvfile3, delimiter = ';')
-        file_now3.writerow(['Prijs'] + prijzen + ['','',''])
-        file_now3.writerow(['Naam'] + producten + ['Geld', 'Geboortedatum','Wachtwoord'])    
-        for lid in leden:
-            volled_naam = "%s %s" %(lid.voornaam, lid.achternaam)
-            file_now3.writerow([volled_naam]+totaal2+ [lid.geboortedatum,lid.wachtwoord])
-        file_now3.writerow(['Totaal'] + totaal2 + ['',''])
-        file_now3.writerow(['Omzet'] + totaal2 + ['',''])
-    
+            
+    write_file()
+
 shutil.copyfile(maandlijstbestand+'temp', maandlijstbestand)
 os.remove(maandlijstbestand+'temp')
 shutil.copyfile('Streeplijst_0000-00temp.csv','Streeplijst_0000-00.csv')
 os.remove('Streeplijst_0000-00temp.csv')
-                
