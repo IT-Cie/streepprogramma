@@ -12,7 +12,7 @@ import hashlib as h
 
 VERSIE = "November 2015"
 WACHTWOORD = "Wachtwoord"
-debuggen = False
+debuggen = True
 
 #===============================================================================
 # Controleer of benodigde bestanden bestaan, stop anders direct en toon missende 
@@ -119,27 +119,19 @@ class LoginScherm(tk.Frame):
         self.naam.focus()
         
     def check_name(self, event):
-        first_name = self.naam.get().title().strip()
+        self.first_name = self.naam.get().title().strip()
         self.response.configure(bg=self.Achtergrondkleur, fg="black")
-        if voornamen.count(first_name) == 0:
+        if voornamen.count(self.first_name) == 0:
             self.response.delete(1.0,tk.END)
             self.response.insert(1.0, "\nNaam onbekend, probeer opnieuw.")
             self.response.tag_add("center", 1.0, "end")
             self.response.configure(background = "red4", fg = "snow")            
-        elif voornamen.count(first_name) == 1:
+        elif voornamen.count(self.first_name) == 1:
             for lid in leden:
-                if first_name == lid.voornaam:
+                if lid.voornaam == self.first_name:
                     vol_naam = "%s %s" %(lid.voornaam, lid.achternaam)
                     root.gebruiker = vol_naam
-                    if lid.wachtwoord == '0':
-                        root.show_frame(StreepScherm)
-                    else:
-                        self.insertedww = tk.StringVar()
-                        self.wachtwoord = lid.wachtwoord
-                        insertww = tk.Toplevel()
-                        tk.Label(insertww, text = 'Wachtwoord?').grid(row=0)
-                        tk.Entry(insertww,text = "Put in Password", textvariable = self.insertedww, show = '*').grid(row=1)
-                        tk.Button(insertww, text = "Ok", command = self.check_password).grid(row=2)
+            self.have_password()
         else:
             self.response.delete(1.0,tk.END)
             self.response.insert(1.0, "Kies uw naam")
@@ -148,7 +140,7 @@ class LoginScherm(tk.Frame):
             self.nu_rij = []
             self.btn_dict = {}
             for lid in leden:
-                if first_name == lid.voornaam:
+                if self.first_name == lid.voornaam:
                     vol_naam = "%s %s" %(lid.voornaam, lid.achternaam)
                     self.nu_rij.append(vol_naam)
             for person in self.nu_rij:
@@ -156,6 +148,19 @@ class LoginScherm(tk.Frame):
                 self.btn_dict[person] = tk.Button(self, width = 40, text = person, font="Calibri, 16", \
                                             command = action, bg = self.Achtergrondkleur, activebackground="yellow2")
                 self.btn_dict[person].pack(pady=10)
+    
+    def have_password(self):
+        for lid in leden:
+            if root.gebruiker == lid.naam:
+                if not lid.wachtwoord:
+                    root.show_frame(StreepScherm)
+                else:
+                    self.insertedww = tk.StringVar()
+                    self.wachtwoord = lid.wachtwoord
+                    insertww = tk.Toplevel()
+                    tk.Label(insertww, text = 'Wachtwoord?').grid(row=0)
+                    tk.Entry(insertww,text = "Put in Password", textvariable = self.insertedww, show = '*').grid(row=1)
+                    tk.Button(insertww, text = "Ok", command = self.check_password).grid(row=2)
                 
     def check_password(self):
         self.insertedww = h.sha224(self.insertedww.get())
@@ -167,7 +172,7 @@ class LoginScherm(tk.Frame):
     
     def reg_naam(self,vol_naam):
         root.gebruiker = vol_naam
-        root.show_frame(StreepScherm)
+        self.have_password()
         for person in self.nu_rij:
             self.btn_dict[person].destroy()
         # Mens-logo
@@ -287,12 +292,11 @@ class StreepScherm(tk.Frame):
         self.nieuwwachtwoord1 = tk.StringVar()
         self.nieuwwachtwoord2 = tk.StringVar()
         self.oudwachtwoord2 = tk.StringVar()
-        self.oudwachtwoord = '0'
         for lid in leden:
             if lid.naam == root.gebruiker:
                 self.oudwachtwoord = lid.wachtwoord
                 
-        if  not self.oudwachtwoord== '0':
+        if  self.oudwachtwoord:
             self.makewachtwoord = tk.Toplevel()
             #Kijken of de gebruiker het huidige wachtwoord weet
             tk.Label(self.makewachtwoord,text="Huidig wachtwoord").grid(row=0,column=0)
@@ -428,7 +432,20 @@ with open(maandlijstbestand, 'rb') as csvfile:
             omzet[i] = round(totaal[i]*prijzen[i],2)
         omzet[-1] = round(sum(omzet[:-1]),2)
         file_now2.writerow(['Omzet'] + omzet + ['',''])
+        
+    with open('Streeplijst_0000-00temp.csv', 'wb') as csvfile3:
+        totaal2 = [0] * (len(producten)+1)
+        file_now3 = csv.writer(csvfile3, delimiter = ';')
+        file_now3.writerow(['Prijs'] + prijzen + ['','',''])
+        file_now3.writerow(['Naam'] + producten + ['Geld', 'Geboortedatum','Wachtwoord'])    
+        for lid in leden:
+            volled_naam = "%s %s" %(lid.voornaam, lid.achternaam)
+            file_now3.writerow([volled_naam]+totaal2+ [lid.geboortedatum,lid.wachtwoord])
+        file_now3.writerow(['Totaal'] + totaal2 + ['',''])
+        file_now3.writerow(['Omzet'] + totaal2 + ['',''])
     
 shutil.copyfile(maandlijstbestand+'temp', maandlijstbestand)
 os.remove(maandlijstbestand+'temp')
+shutil.copyfile('Streeplijst_0000-00temp.csv','Streeplijst_0000-00.csv')
+os.remove('Streeplijst_0000-00temp.csv')
                 
