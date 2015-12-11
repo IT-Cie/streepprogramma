@@ -10,7 +10,7 @@ import hashlib as h
 # Instellingen
 #===============================================================================
 
-VERSIE = "November 2015"
+VERSIE = "December 2015, beta"
 WACHTWOORD = "Wachtwoord"
 lettertype = ("Calibri, 15")
 debuggen = True
@@ -100,6 +100,7 @@ class LoginScherm(tk.Frame):
         tk.Frame.__init__(self,parent,bg=self.Achtergrondkleur)
         
         tk.Label(self, bg = self.Achtergrondkleur).pack(ipady=25)
+        if debuggen: tk.Label(self, text='DEBUGGEN', font='Calibri, 24').pack()
         
         # Invoer van eigen naam
         self.naam = tk.Entry(self, justify=tk.CENTER, font="Calibri, 20", bd=0)
@@ -256,6 +257,7 @@ class StreepScherm(tk.Frame):
         self.tekst_naam.delete(0.0, tk.END)
         self.tekst_al_gestreept.delete(0.0, tk.END)
         self.tekst_nu_gestreept.delete(0.0, tk.END)
+        self.additief_saldo=0
         self.gestreept = dict.fromkeys(self.gestreept,0)
         self.tekst_naam.insert(0.0, "\nHoi "+root.gebruiker.voornaam+"!")
         self.tekst_naam.tag_add("center", 0.0, "end")
@@ -344,11 +346,12 @@ class GebruikerScherm(tk.Frame):
 
     def voorbereiding(self):
         # Deze functie wordt opgeroepen voor het frame naar voren wordt gebracht.
+        self.wachtwoord.config(state=tk.NORMAL)
+        self.wachtwoord.delete(0, tk.END)
         if not root.gebruiker.wachtwoord:
             self.wachtwoord.config(state=tk.DISABLED)
         else:
             self.wachtwoord.config(state=tk.NORMAL)
-        self.wachtwoord.delete(0, tk.END)
         self.nieuwwachtwoord1.delete(0, tk.END)
         self.nieuwwachtwoord2.delete(0, tk.END)
             
@@ -445,7 +448,7 @@ def check_minderjarig(row):
     nu_dag = int(time.strftime("%d"))
     if (jaar+18) > nu_jaar:
         meerderjarig = True
-    if (jaar+18) == nu_jaar:
+    elif (jaar+18) == nu_jaar:
         if maand > nu_maand:
             meerderjarig = True
         elif maand == nu_maand:
@@ -482,7 +485,7 @@ with open(maandlijstbestand, 'rb') as csvfile:
             if check_minderjarig(row):
                 minderjarigen.append(row[0])
         elif row[0][-5:] == 'jaars':
-            jaars = lambda:0
+            jaars = lambda:0 # To create an empty instance
             jaars.voornaam = ""
             jaars.naam = row[0]
             jaars.aantal= row[1:-3]
