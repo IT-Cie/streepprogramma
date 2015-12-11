@@ -103,18 +103,21 @@ class LoginScherm(tk.Frame):
         if debuggen: tk.Label(self, text='DEBUGGEN', font='Calibri, 24').pack()
         
         # Invoer van eigen naam
+        tk.Label(self, text='Voornaam', font=lettertype, bg=self.Achtergrondkleur).pack()
         self.naam = tk.Entry(self, justify=tk.CENTER, font="Calibri, 20", bd=0)
         self.naam.pack(side="top", ipady=10)
         self.naam.bind("<Return>", self.check_name)
         
+        tk.Label(self, bg = self.Achtergrondkleur).pack(ipady=10)
+        tk.Label(self, text='Wachtwoord', font=lettertype, bg=self.Achtergrondkleur).pack()
         self.wachtwoord = tk.Entry(self, show="*", justify=tk.CENTER, font="Calibri, 20", bd=0)
-        self.wachtwoord.pack(side="top", ipady=10, pady=25)
+        self.wachtwoord.pack(side="top", ipady=10)
         self.wachtwoord.bind("<Return>", self.check_name)
-        
+        tk.Label(self, bg = self.Achtergrondkleur).pack(ipady=10)
         # Informatie ruimte
         self.response = tk.Text(self, font="Calibri, 16", bd=0, width=25, height=4, bg=self.Achtergrondkleur, wrap=tk.WORD)
         self.response.tag_configure("center", justify='center')
-        self.response.pack(padx=100)
+        self.response.pack()
         
         # Mens-logo
         self.menslogo = ImageTk.PhotoImage(Image.open('Images\\menslogo.png'))
@@ -213,7 +216,8 @@ class StreepScherm(tk.Frame):
         action = lambda: root.show_frame(LoginScherm)
         tk.Button(self.left_frame, text = "Terug", bg = 'white', command = action, font=lettertype).grid(row = 1, column = 1, sticky="nsew")
         action = lambda: root.show_frame(GebruikerScherm)
-        tk.Button(self.left_frame, text = "Maak nieuw wachtwoord", bg = 'white', command = action, font=lettertype).grid(row = 1, column = 3, sticky="nsew")
+        self.wachtwoordknop = tk.Button(self.left_frame, bg = 'white', command = action, font=lettertype)
+        self.wachtwoordknop.grid(row = 1, column = 3, sticky="nsew")
         self.tekst_naam = tk.Text(self.right_frame, width=23, height = 2, bg=self.Achtergrondkleur, bd=0, font=lettertype)
         self.tekst_naam.tag_configure("center", justify='center')
         self.tekst_naam.pack(side="top", pady=20)
@@ -229,11 +233,12 @@ class StreepScherm(tk.Frame):
         self.a = u"\u00E0"
                 
         posrow=2; poscol=1
+        self.knoppen = {}
         for i in range(len(producten)):
             action = lambda x = producten[i]: self.nu_gestreept(x)
-            foo=tk.Button(self.left_frame, image=self.images[producten[i]], text="%s %s %s %.2f" %(producten[i], self.a, self.euro, prijzen[i]), compound="top", font=lettertype, bd=0, bg=self.Achtergrondkleur, command=action)
-            foo.grid(row=posrow, column=poscol)
-            foo.bind("<Button-3>",lambda event, x = producten[i]: self.nu_gestreept(x,-1))
+            self.knoppen[producten[i]]=tk.Button(self.left_frame, image=self.images[producten[i]], text="%s %s %s %.2f" %(producten[i], self.a, self.euro, prijzen[i]), compound="top", font=lettertype, bd=0, bg=self.Achtergrondkleur, command=action)
+            self.knoppen[producten[i]].grid(row=posrow, column=poscol)
+            self.knoppen[producten[i]].bind("<Button-3>",lambda event, x = producten[i]: self.nu_gestreept(x,-1))
             if posrow==4:
                 posrow=2
                 poscol+=1
@@ -259,6 +264,18 @@ class StreepScherm(tk.Frame):
         self.tekst_nu_gestreept.delete(0.0, tk.END)
         self.additief_saldo=0
         self.gestreept = dict.fromkeys(self.gestreept,0)
+        if root.gebruiker.minderjarig:
+            self.knoppen['Bier'].config(state=tk.DISABLED)
+            self.knoppen['Wijn'].config(state=tk.DISABLED)
+            self.knoppen['Sterk'].config(state=tk.DISABLED)
+            self.unbind('b');
+        else:
+            self.knoppen['Bier'].config(state=tk.NORMAL)
+            self.knoppen['Wijn'].config(state=tk.NORMAL)
+            self.knoppen['Sterk'].config(state=tk.NORMAL)
+            self.bind("b",lambda event, x="Bier":self.nu_gestreept(x))
+        if root.gebruiker.wachtwoord: self.wachtwoordknop.config(text = "Maak nieuw wachtwoord")
+        else: self.wachtwoordknop.config(text = "Stel wachtwoord in")
         self.tekst_naam.insert(0.0, "\nHoi "+root.gebruiker.voornaam+"!")
         self.tekst_naam.tag_add("center", 0.0, "end")
         al_gestreept = "\n\nHuidige aantal consumpties:\n\n"
@@ -269,14 +286,15 @@ class StreepScherm(tk.Frame):
         self.focus_set()
         
     def doe_aankoop(self):
-        for lid in leden:
-            if lid.naam == root.gebruiker.naam:
-                lid.geld += self.additief_saldo
-                for i in range(len(producten)):
-                    lid.aantal[i] += self.gestreept[producten[i]]
-                    self.gestreept[producten[i]]=0
-        write_file()
-        root.show_frame(LoginScherm)
+        if not self.additief_saldo==0:
+            for lid in leden:
+                if lid.naam == root.gebruiker.naam:
+                    lid.geld += self.additief_saldo
+                    for i in range(len(producten)):
+                        lid.aantal[i] += self.gestreept[producten[i]]
+                        self.gestreept[producten[i]]=0
+            write_file()
+            root.show_frame(LoginScherm)
         
     def nu_gestreept(self, artikel, quantity=1):
         self.gestreept[artikel]+=quantity
@@ -308,8 +326,9 @@ class GebruikerScherm(tk.Frame):
         tk.Frame.__init__(self,parent,bg=self.Achtergrondkleur)
           
         tk.Label(self, bg = self.Achtergrondkleur).pack(ipady=20)
-        tk.Label(self, text = 'Huidig wachtwoord', bg = self.Achtergrondkleur, font=lettertype).pack()
-        self.wachtwoord = tk.Entry(self, show="*", justify=tk.CENTER, font="Calibri, 20", bd=0)
+        self.wachtwoordlabel = tk.Label(self, text = 'Huidig wachtwoord', bg = self.Achtergrondkleur, font=lettertype, disabledforeground=self.Achtergrondkleur)
+        self.wachtwoordlabel.pack()
+        self.wachtwoord = tk.Entry(self, show="*", justify=tk.CENTER, font="Calibri, 20", bd=0, disabledbackground=self.Achtergrondkleur)
         self.wachtwoord.pack()
         self.wachtwoord.bind("<Return>", self.maak_wachtwoord)
         
@@ -349,9 +368,11 @@ class GebruikerScherm(tk.Frame):
         self.wachtwoord.config(state=tk.NORMAL)
         self.wachtwoord.delete(0, tk.END)
         if not root.gebruiker.wachtwoord:
-            self.wachtwoord.config(state=tk.DISABLED)
+            self.wachtwoord.config(state=tk.DISABLED); self.wachtwoordlabel.config(state=tk.DISABLED)
+            
         else:
-            self.wachtwoord.config(state=tk.NORMAL)
+            self.wachtwoord.config(state=tk.NORMAL); self.wachtwoordlabel.config(state=tk.NORMAL)
+            
         self.nieuwwachtwoord1.delete(0, tk.END)
         self.nieuwwachtwoord2.delete(0, tk.END)
             
@@ -359,30 +380,17 @@ class GebruikerScherm(tk.Frame):
         if root.gebruiker.wachtwoord:
             self.oudwachtwoord = h.sha224(self.wachtwoord.get())
             self.oudwachtwoord = self.oudwachtwoord.digest()
-            if root.gebruiker.wachtwoord == self.oudwachtwoord:
-                if self.nieuwwachtwoord1.get() or self.nieuwwachtwoord2.get():
-                    if self.nieuwwachtwoord1.get() == self.nieuwwachtwoord2.get():
-                        self.nieuwwachtwoord = h.sha224(self.nieuwwachtwoord1.get())
-                        self.nieuwwachtwoord = self.nieuwwachtwoord.digest()
-                        for lid in leden:
-                            if lid.naam == root.gebruiker.naam:
-                                lid.wachtwoord = self.nieuwwachtwoord
-                                root.gebruiker.wachtwoord = lid.wachtwoord
-                        tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is veranderd!")
-                        root.frames[StreepScherm].tkraise()
-                    else:
-                        tkMessageBox.showwarning("Verkeerd wachtwoord", "De ingevoerde wachtwoorden komen niet overeen!")
-                else: 
-                    for lid in leden:
-                        if lid.naam == root.gebruiker.naam:
-                            lid.wachtwoord = ""
-                            root.gebruiker.wachtwoord = lid.wachtwoord
-                    tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is verwijderd!")
-                    root.frames[StreepScherm].tkraise()
-            else:
+            if not root.gebruiker.wachtwoord == self.oudwachtwoord:
                 tkMessageBox.showwarning("Verkeerd wachtwoord", "Het ingevoerde wachtwoord is incorrect!")
-            
-        else: 
+                return
+            if not (self.nieuwwachtwoord1.get() and self.nieuwwachtwoord2.get()):
+                for lid in leden:
+                    if lid.naam == root.gebruiker.naam:
+                        lid.wachtwoord = ""
+                        root.gebruiker.wachtwoord = lid.wachtwoord
+                tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is verwijderd!")
+                root.show_frame(StreepScherm)
+        if self.nieuwwachtwoord1.get() or self.nieuwwachtwoord2.get():
             if self.nieuwwachtwoord1.get() == self.nieuwwachtwoord2.get():
                 self.nieuwwachtwoord = h.sha224(self.nieuwwachtwoord1.get())
                 self.nieuwwachtwoord = self.nieuwwachtwoord.digest()
@@ -391,7 +399,7 @@ class GebruikerScherm(tk.Frame):
                         lid.wachtwoord = self.nieuwwachtwoord
                         root.gebruiker.wachtwoord = lid.wachtwoord
                 tkMessageBox.showwarning("Voltooid", "Uw wachtwoord is veranderd!")
-                root.frames[StreepScherm].tkraise()
+                root.show_frame(StreepScherm)
             else:
                 tkMessageBox.showwarning("Verkeerd wachtwoord", "De ingevoerde wachtwoorden komen niet overeen!")
 
@@ -403,7 +411,27 @@ class Lid():
         self.aantal=map(int,aantallen)
         self.geld = float(geld)
         self.geboortedatum = geboortedatum
+        self.minderjarig = self.check_minderjarig(geboortedatum)
         self.wachtwoord = str(wachtwoord)
+    
+    def check_minderjarig(self, geboortedatum):
+        minderjarig = True
+        lid = geboortedatum.split("-")
+        dag = int(lid[0])
+        maand = int(lid[1])
+        jaar = int(lid[2])
+        nu_jaar = int(time.strftime("%Y"))
+        nu_maand = int(time.strftime("%m"))
+        nu_dag = int(time.strftime("%d"))
+        if (jaar+18) < nu_jaar:
+            minderjarig = False
+        elif (jaar+18) == nu_jaar:
+            if maand < nu_maand:
+                minderjarig = False
+            elif maand == nu_maand:
+                if dag < nu_dag:
+                    minderjarig = False
+        return minderjarig
 
 def write_file():    
     with open(maandlijstbestand+'temp', 'wb') as csvfile2:
@@ -436,25 +464,6 @@ def write_file():
                 file_now3.writerow([lid.naam]+totaal2+ [lid.geboortedatum,lid.wachtwoord])
         file_now3.writerow(['Totaal'] + totaal2 + ['',''])
         file_now3.writerow(['Omzet'] + totaal2 + ['',''])
-    
-def check_minderjarig(row):
-    meerderjarig = False
-    lid = row[-2].split("-")
-    dag = int(lid[0])
-    maand = int(lid[1])
-    jaar = int(lid[2])
-    nu_jaar = int(time.strftime("%Y"))
-    nu_maand = int(time.strftime("%m"))
-    nu_dag = int(time.strftime("%d"))
-    if (jaar+18) > nu_jaar:
-        meerderjarig = True
-    elif (jaar+18) == nu_jaar:
-        if maand > nu_maand:
-            meerderjarig = True
-        elif maand == nu_maand:
-            if dag > nu_dag:
-                meerderjarig = True
-    return meerderjarig
 
 maandlijstbestand = 'Streeplijst_'+time.strftime("%Y-%m")+'.csv'
 
@@ -482,8 +491,6 @@ with open(maandlijstbestand, 'rb') as csvfile:
             lid = Lid(row[0], row[1:-3], row[-3], row[-2], row[-1])
             leden.append(lid)
             voornamen.append(lid.voornaam)
-            if check_minderjarig(row):
-                minderjarigen.append(row[0])
         elif row[0][-5:] == 'jaars':
             jaars = lambda:0 # To create an empty instance
             jaars.voornaam = ""
