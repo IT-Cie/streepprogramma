@@ -45,7 +45,8 @@ class MainApplication(tk.Tk):
 
         # Fullscreen mogelijkheid
         self.fullscreenstate = True
-        self.attributes("-fullscreen", self.fullscreenstate)
+        #self.attributes("-fullscreen", self.fullscreenstate)
+        self.geometry("600x600")
         self.bind("<F11>", self.toggle_fullscreen)
         self.bind("<Escape>", self.exit_fullscreen)
         
