@@ -10,7 +10,7 @@ import hashlib as h
 # Instellingen
 #===============================================================================
 
-VERSIE = "December 2015, beta"
+VERSIE = "Januari 2016, beta"
 WACHTWOORD = "Wachtwoord"
 lettertype = ("Calibri, 15")
 debuggen = True
@@ -96,6 +96,7 @@ class MainApplication(tk.Tk):
 class LoginScherm(tk.Frame):
 
     def __init__(self, parent):
+        self.bezig=False
         self.Achtergrondkleur = "yellow"
         tk.Frame.__init__(self,parent,bg=self.Achtergrondkleur)
         
@@ -135,34 +136,39 @@ class LoginScherm(tk.Frame):
         self.naam.focus()
         
     def check_name(self, event):
-        self.first_name = self.naam.get().title().strip()
-        self.response.configure(bg=self.Achtergrondkleur, fg="black")
-        if voornamen.count(self.first_name) == 0:
-            self.response.delete(1.0,tk.END)
-            self.response.insert(1.0, "\nNaam onbekend, probeer opnieuw.")
-            self.response.tag_add("center", 1.0, "end")
-            self.response.configure(background = "red4", fg = "snow")            
-        elif voornamen.count(self.first_name) == 1:
-            for lid in leden:
-                if lid.voornaam == self.first_name:
-                    root.gebruiker = lid
-            self.have_password()
-        else:
-            self.response.delete(1.0,tk.END)
-            self.response.insert(1.0, "Kies uw naam")
-            self.response.tag_add("center", 1.0, "end")
-            self.backlabel.destroy()
-            self.nu_rij = []
-            self.btn_dict = {}
-            for lid in leden:
-                if lid.voornaam == self.first_name:
-                    self.nu_rij.append(lid.naam)
-            self.nu_rij.append('Annuleren')
-            for person in self.nu_rij:
-                action = lambda x = person: self.reg_naam(x)
-                self.btn_dict[person] = tk.Button(self, width = 40, text = person, font="Calibri, 16", \
-                                            command = action, bg = self.Achtergrondkleur, activebackground="yellow2")
-                self.btn_dict[person].pack(pady=10)
+        self.response.delete(1.0,tk.END)
+        if self.bezig==False:
+            self.first_name = self.naam.get().title().strip()
+            self.response.configure(bg=self.Achtergrondkleur, fg="black")
+            if voornamen.count(self.first_name) == 0:
+                self.response.delete(1.0,tk.END)
+                self.response.insert(1.0, "\nNaam onbekend, probeer opnieuw.")
+                self.response.tag_add("center", 1.0, "end")
+                self.response.configure(background = "red4", fg = "snow")            
+            elif voornamen.count(self.first_name) == 1:
+                for lid in leden:
+                    if lid.voornaam == self.first_name:
+                        root.gebruiker = lid
+                self.have_password()
+            else:
+                #self.response.delete(1.0,tk.END)
+                self.response.insert(1.0, "Kies uw naam")
+                self.response.tag_add("center", 1.0, "end")
+                self.backlabel.destroy()
+                self.nu_rij = []
+                self.btn_dict = {}
+                self.bezig=True
+                for lid in leden:
+                    if lid.voornaam == self.first_name:
+                        self.nu_rij.append(lid.naam)
+                self.nu_rij.append('Annuleren')
+                for person in self.nu_rij:
+                    action = lambda x = person: self.reg_naam(x)
+                    self.btn_dict[person] = tk.Button(self, width = 40, text = person, font="Calibri, 16", \
+                                                command = action, bg = self.Achtergrondkleur, activebackground="yellow2")
+                    self.btn_dict[person].pack(pady=10)
+        else:                 
+            w = tkMessageBox.showwarning("Bezig", "Klik eerst op annuleren!")
 
     def have_password(self):
         if not root.gebruiker.wachtwoord:
@@ -187,6 +193,7 @@ class LoginScherm(tk.Frame):
         self.backlabel = tk.Label(self, bg=self.Achtergrondkleur, image= self.menslogo)
         self.backlabel.image = self.menslogo
         self.backlabel.pack(pady=50)
+        self.bezig=False
         
 class StreepScherm(tk.Frame):
 
